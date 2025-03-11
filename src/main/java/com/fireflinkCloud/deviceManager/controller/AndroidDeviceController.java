@@ -10,7 +10,9 @@ import com.github.dockerjava.transport.DockerHttpClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -49,41 +51,39 @@ public class AndroidDeviceController {
             // Pull the image if not available
             dockerClient.pullImageCmd(imageName).start().awaitCompletion();
 
-            // Define ports
-            ExposedPort[] exposedPorts = {
-                    ExposedPort.tcp(5900),
-                    ExposedPort.tcp(4723),
-                    ExposedPort.tcp(5555),
-                    ExposedPort.tcp(4444)
-            };
+//             // Define ports
+//             ExposedPort[] exposedPorts = {
+//                     ExposedPort.tcp(5900),
+//                     ExposedPort.tcp(4723),
+//                     ExposedPort.tcp(5555),
+//                     ExposedPort.tcp(4444)
+//             };
+// // Define port bindings
+//         Ports portBindings = new Ports();
 
-            Ports portBindings = new Ports();
-            portBindings.bind(ExposedPort.tcp(5900), Ports.Binding.bindPort(5900));
-            portBindings.bind(ExposedPort.tcp(4723), Ports.Binding.bindPort(4723));
-            portBindings.bind(ExposedPort.tcp(5555), Ports.Binding.bindPort(5555));
-            portBindings.bind(ExposedPort.tcp(4444), Ports.Binding.bindPort(4444));
+        // Define environment variables
+        List<String> envVars = Arrays.asList(
+                "APPIUM_PORT=4723",
+                "NODE_PORT=5555",
+                "SELENIUM_HUB_URL=http://103.182.210.85:4444",
+                "DEVICE_NAME=Pixel_6",
+                "PLATFORM_VERSION=11.0",
+                "MJPEG_PORT=9100",
+                "WDA_PORT=8200",
+                "HUB_URL=103.182.210.91"
+        );
 
-            // Create the container
-            CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
-                    .withName(containerName)
-                    .withHostConfig(new HostConfig()
-                            .withPrivileged(true) // Equivalent to --privileged
-                            .withDevices(new Device("rwm", "/dev/kvm", "/dev/kvm")) // Equivalent to --device /dev/kvm
-                            .withPortBindings(portBindings) // Apply correct port mappings
-                            .withNetworkMode("host") // Equivalent to --network host
-                    )
-                    .withExposedPorts(exposedPorts) // Ensure ports are exposed
-                    .withEnv(
-                            "APPIUM_PORT=4723",
-                            "NODE_PORT=5555",
-                            "SELENIUM_HUB_URL=" + requestParams.getOrDefault("seleniumHubUrl", "http://103.182.210.85:4444"),
-                            "DEVICE_NAME=" + requestParams.getOrDefault("deviceName", "Pixel_6"),
-                            "PLATFORM_VERSION=" + requestParams.getOrDefault("platformVersion", "11.0"),
-                            "MJPEG_PORT=9100",
-                            "WDA_PORT=8200",
-                            "HUB_URL=" + requestParams.getOrDefault("hubUrl", "103.182.210.91")
-                    )
-                    .exec();
+        // Create the container
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withName(containerName)
+                .withHostConfig(new HostConfig()
+                        .withPrivileged(true)  // Equivalent to --privileged
+                        .withDevices(new Device("rwm", "/dev/kvm", "/dev/kvm"))  // --device /dev/kvm
+                        .withGroupAdd(Arrays.asList("kvm"))  // Equivalent to --group-add kvm
+                        .withNetworkMode("host")  // --network host
+                )
+                .withEnv(envVars)  // Set environment variables
+                .exec();
 
             // Start the container
             dockerClient.startContainerCmd(container.getId()).exec();
