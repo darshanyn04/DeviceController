@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/android")
@@ -45,33 +46,44 @@ public class AndroidDeviceController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            String imageName = requestParams.getOrDefault("imageName", "darshan419/pixel-6:latest");
-            String containerName = requestParams.getOrDefault("containerName", "android-device");
+            // String imageName = requestParams.getOrDefault("imageName", "darshan419/pixel-6:latest");
+            // String containerName = requestParams.getOrDefault("containerName", "android-device");
 
-            // Pull the image if not available
-            dockerClient.pullImageCmd(imageName).start().awaitCompletion();
+            // // Pull the image if not available
+            // dockerClient.pullImageCmd(imageName).start().awaitCompletion();
 
-//             // Define ports
-//             ExposedPort[] exposedPorts = {
-//                     ExposedPort.tcp(5900),
-//                     ExposedPort.tcp(4723),
-//                     ExposedPort.tcp(5555),
-//                     ExposedPort.tcp(4444)
-//             };
-// // Define port bindings
-//         Ports portBindings = new Ports();
+            // Define ports
+            // ExposedPort[] exposedPorts = {
+            //         ExposedPort.tcp(5900),
+            //         ExposedPort.tcp(4723),
+            //         ExposedPort.tcp(5555),
+            //         ExposedPort.tcp(4444)
+            // };
+// Define port bindings
+        // Ports portBindings = new Ports();
 
         // Define environment variables
-        List<String> envVars = Arrays.asList(
-                "APPIUM_PORT=4723",
-                "NODE_PORT=5555",
-                "SELENIUM_HUB_URL=http://103.182.210.85:4444",
-                "DEVICE_NAME=Pixel_6",
-                "PLATFORM_VERSION=11.0",
-                "MJPEG_PORT=9100",
-                "WDA_PORT=8200",
-                "HUB_URL=103.182.210.91"
-        );
+        // List<String> envVars = Arrays.asList(
+        //         "APPIUM_PORT=4723",
+        //         "NODE_PORT=5555",
+        //         "SELENIUM_HUB_URL=http://103.182.210.85:4444",
+        //         "DEVICE_NAME=Pixel_6",
+        //         "PLATFORM_VERSION=11.0",
+        //         "MJPEG_PORT=9100",
+        //         "WDA_PORT=8200",
+        //         "HUB_URL=103.182.210.91"
+        // );
+
+        String imageName = requestParams.getOrDefault("imageName", "darshan419/pixel-6:latest");
+        String containerName = requestParams.getOrDefault("containerName", "android-device");
+
+        // Pull the image if not available
+        dockerClient.pullImageCmd(imageName).start().awaitCompletion();
+
+        // Convert request parameters to environment variables
+        List<String> envVars = requestParams.entrySet().stream()
+                .map(entry -> entry.getKey().toUpperCase() + "=" + entry.getValue())
+                .collect(Collectors.toList());
 
         // Create the container
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
