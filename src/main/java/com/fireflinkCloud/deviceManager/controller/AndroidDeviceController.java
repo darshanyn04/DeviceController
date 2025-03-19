@@ -46,36 +46,10 @@ public class AndroidDeviceController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            // String imageName = requestParams.getOrDefault("imageName", "darshan419/pixel-6:latest");
-            // String containerName = requestParams.getOrDefault("containerName", "android-device");
-
-            // // Pull the image if not available
-            // dockerClient.pullImageCmd(imageName).start().awaitCompletion();
-
-            // Define ports
-            // ExposedPort[] exposedPorts = {
-            //         ExposedPort.tcp(5900),
-            //         ExposedPort.tcp(4723),
-            //         ExposedPort.tcp(5555),
-            //         ExposedPort.tcp(4444)
-            // };
-// Define port bindings
-        // Ports portBindings = new Ports();
-
-        // Define environment variables
-        // List<String> envVars = Arrays.asList(
-        //         "APPIUM_PORT=4723",
-        //         "NODE_PORT=5555",
-        //         "SELENIUM_HUB_URL=http://103.182.210.85:4444",
-        //         "DEVICE_NAME=Pixel_6",
-        //         "PLATFORM_VERSION=11.0",
-        //         "MJPEG_PORT=9100",
-        //         "WDA_PORT=8200",
-        //         "HUB_URL=103.182.210.91"
-        // );
-
         String imageName = requestParams.getOrDefault("imageName", "darshan419/pixel-6:latest");
         String containerName = requestParams.getOrDefault("containerName", "android-device");
+        int mjpegPort=Integer.parseInt(requestParams.get("MJPEG_PORT"));
+        // int number = Integer.parseInt(mjpegPort);
 
         // Pull the image if not available
         dockerClient.pullImageCmd(imageName).start().awaitCompletion();
@@ -85,14 +59,21 @@ public class AndroidDeviceController {
                 .map(entry -> entry.getKey().toUpperCase() + "=" + entry.getValue())
                 .collect(Collectors.toList());
 
+
+        Ports portBindings = new Ports();
+        // portBindings.bind(ExposedPort.tcp(4723), Ports.Binding.bindPort(4723));
+        // portBindings.bind(ExposedPort.tcp(5555), Ports.Binding.bindPort(5555));
+        portBindings.bind(ExposedPort.tcp(5900), Ports.Binding.bindPort(mjpegPort));
+
         // Create the container
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
                 .withName(containerName)
                 .withHostConfig(new HostConfig()
+                        // .withPortBindings(portBindings)
                         .withPrivileged(true)  // Equivalent to --privileged
                         .withDevices(new Device("rwm", "/dev/kvm", "/dev/kvm"))  // --device /dev/kvm
                         .withGroupAdd(Arrays.asList("kvm"))  // Equivalent to --group-add kvm
-                        .withNetworkMode("host")  // --network host
+                        .withNetworkMode("host")
                 )
                 .withEnv(envVars)  // Set environment variables
                 .exec();
